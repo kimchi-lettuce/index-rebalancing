@@ -9,7 +9,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@clack/prompts": "^0.11.0"
+    "@clack/prompts": "^0.11.0",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@types/node": "^24.0.4"

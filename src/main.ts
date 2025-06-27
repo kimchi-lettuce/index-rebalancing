@@ -1,16 +1,11 @@
 import { readData } from "./utils/readData"
-import { text } from "@clack/prompts"
+import { getAllocationAmount } from "./utils/getAllocationAmount"
 
 async function main() {
   const { lines, headers, dataRows } = await readData()
+  const initialAllocationAmount = await getAllocationAmount()
 
-  // Choose initial allocation amount
-  const initialAllocationAmount = await text({
-    message: "Enter the initial allocation amount (in millions):",
-    placeholder: "100",
-    initialValue: "100",
-  })
-  console.log({ lines, headers, dataRows })
+  console.log({ lines, headers, dataRows, initialAllocationAmount })
 }
 
 main()

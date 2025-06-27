@@ -1,6 +1,7 @@
 import { select, log, cancel, isCancel } from "@clack/prompts"
 import { readFileSync, readdirSync } from "fs"
 import { join } from "path"
+import { z } from "zod"
 
 /**
  * Reads and parses a CSV file containing market capitalisation data
@@ -45,8 +46,81 @@ export async function readData() {
     const headers = lines[0].split(",")
     const dataRows = lines.slice(1)
 
+    // Validate that the data is in the correct format. First by checking that the
+    // headers of the csv file are correct.
+    const expectedHeaders = ["date", "company", "market_cap_m", "price"]
+    const headerMatching = headers.map(
+      (header, idx) =>
+        header.trim().toLowerCase() ===
+        expectedHeaders[idx].trim().toLowerCase()
+    )
+
+    if (headerMatching.some((match) => !match)) {
+      cancel(
+        `Invalid headers. Expected: ${expectedHeaders.join(
+          ", "
+        )}. Got: ${headers.join(", ")}`
+      )
+      process.exit(1)
+    }
+
+    // TODO: This should be improved by being more strict on the checks for the
+    // date, marketCapM and price fields. It could be good to use the index of
+    // the for loop to log out exactly which line of the csv file is invalid.
+
+    // TODO: Would also be good to lowercase all the company names, and to trim,
+    // to ensure that they are unique identifiers
+
+    // Zod schema for a row
+    const rowSchema = z.object({
+      date: z.string(),
+      company: z.string(),
+      marketCapM: z.number(),
+      price: z.number(),
+    })
+
+    // Group the data by date, and parse them into objects
+    const groupedByDate = new Map<
+      string,
+      { date: string; company: string; marketCapM: number; price: number }[]
+    >()
+
+    for (const row of dataRows) {
+      const values = row.split(",")
+      const date = values[0]
+      const company = values[1]
+      const marketCapM = parseFloat(values[2])
+      const price = parseFloat(values[3])
+
+      const parsed = rowSchema.safeParse({ date, company, marketCapM, price })
+      if (!parsed.success) {
+        cancel(
+          `Invalid row: ${JSON.stringify({
+            date,
+            company,
+            marketCapM,
+            price,
+          })}\n${parsed.error}`
+        )
+        process.exit(1)
+      }
+
+      // Create entry for date if it doesn't exist
+      if (!groupedByDate.has(date)) groupedByDate.set(date, [])
+      groupedByDate.get(date)!.push(parsed.data)
+    }
+
+    // Sort the entries by date
+    const entriesSortedByDate = Array.from(groupedByDate.entries()).sort(
+      ([dateStrA], [dateStrB]) => {
+        const dateA = new Date(dateStrA)
+        const dateB = new Date(dateStrB)
+        return dateA.getTime() - dateB.getTime()
+      }
+    )
+
     log.step(`File ${selectedFile} read successfully`)
-    return { lines, headers, dataRows }
+    return { lines, headers, dataRows, entriesSortedByDate }
   } catch (err) {
     cancel(`Error reading file ${selectedFile}: ${err}`)
     process.exit(1)

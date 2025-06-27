@@ -31,3 +31,8 @@ The **overall value and performance** of a market cap weighted index is determin
 
 ### Implication
 The "proportion" might be a specific number of companies, or companies above a certain market cap, or companies that collectively represent a certain percentage of the total market.
+
+----
+
+## Missing Data
+- I think in order to do the rebalancing, we need the price of the shares. 

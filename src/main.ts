@@ -1,74 +1,65 @@
-import { readData } from "./utils/readData"
-import { getAllocationAmount } from "./utils/getAllocationAmount"
-import { cancel } from "@clack/prompts"
-import assert from "assert"
+import {
+  type PortfolioState,
+  computeNewPortfolioState,
+} from "./utils/portfolioValue"
+import { readData, getInitialAllocationAmount } from "./utils/readData"
+import { selectCompaniesByMarketCapWeight } from "./utils/selectCompanies"
 
-const DECIMAL_PLACES_OF_WEIGHT = 2
+export const DECIMAL_PRECISION = 8
+
+// TODO: Add the creation of the ./data folder
 
 async function main() {
-  const { lines, headers, dataRows, entriesSortedByDate } = await readData()
-  const initialAllocationAmount = await getAllocationAmount()
+  const { entriesSortedByDate } = await readData()
+  const initialAllocationAmount = await getInitialAllocationAmount()
 
-  for (const [date, entries] of entriesSortedByDate) {
-    console.log(date)
+  let portfolioState: PortfolioState = {
+    date: new Date(),
+    assets: [],
+    initialAllocationAmount,
+    totalValue: 0
+  }
 
-    // Gather market cap and weight for each company
-    const totalMarketCapM = entries.reduce(
-      (acc, entry) => acc + entry.marketCapM,
-      0
-    )
+  for (const [idx, [date, entries]] of entriesSortedByDate.entries()) {
+    // Note, selecting the companies for the new rebalancing, does not require
+    // evaluation of the current value of the portfolio
+    const selectedCompanies = selectCompaniesByMarketCapWeight(entries, 0.85)
 
-    // FIXME: Because of rounding, the sum of the weights may not be 1.0
-    const sortedMarketCapAndWeight = entries
-      .map((entry) => ({
-        marketCapM: entry.marketCapM,
-        weight: Number(
-          (entry.marketCapM / totalMarketCapM).toFixed(DECIMAL_PLACES_OF_WEIGHT)
-        ),
-      }))
-      .sort((a, b) => b.weight - a.weight)
+    // FIXME: 2. Allocation. Pass in the value of the portfolio/the initial allocation
+    //    amount, and then determine how much to allocate to each company.
+    portfolioState = computeNewPortfolioState(portfolioState, entries)
+    computeCompanyAllocationAmounts(selectedCompanies, portfolioState.totalValue)
 
-    let cumulative = 0
-    const selectedCompanies: {
-      marketCapM: number
-      weight: number
-      cumulative: number
-    }[] = []
+    // 3. Buy. Calculate the difference and rebalance the portfolio
 
-    for (const entry of sortedMarketCapAndWeight) {
-      cumulative += entry.weight
-      selectedCompanies.push({
-        ...entry,
-        cumulative,
-      })
-      if (cumulative >= 0.85) break
+    //     // TODO: Get the current value of the portfolio
+
+    console.log({ date })
+    // For the first date, generate the report that informs how much of each
+    // company to buy using the initial allocation amount
+    if (idx === 0) {
+      const totalSelectedWeight = selectedCompanies.reduce(
+        (acc, company) => acc + company.weight,
+        0
+      )
+
+      // Filter out the no longer needed cumulative weight
+      const allocationAmounts = selectedCompanies.map(
+        ({ cumulative, ...rest }) => ({
+          ...rest,
+          allocationAmount: Number(
+            (
+              (rest.weight / totalSelectedWeight) *
+              initialAllocationAmount
+            ).toFixed(ALLOCATION_AMOUNT_DECIMAL_PLACES)
+          ),
+        })
+      )
+      console.log(allocationAmounts)
     }
-
-    console.log({ selectedCompanies })
   }
 }
 
 main()
 
-// // Group entries by date
-// const groupedByDate = new Map<string, any[]>()
-
-// for (const row of dataRows) {
-// 	const values = row.split(',')
-// 	const date = values[0]
-
-// 	if (!groupedByDate.has(date)) {
-// 		groupedByDate.set(date, [])
-// 	}
-
-// 	const entry = {
-// 		date: values[0],
-// 		company: values[1],
-// 		marketCapM: parseFloat(values[2]),
-// 		price: parseFloat(values[3])
-// 	}
-
-// 	groupedByDate.get(date)!.push(entry)
-// }
-
-// Use a for loop to iterate through the files
+// TODO:

@@ -1,7 +1,15 @@
-import { select, log, cancel, isCancel } from "@clack/prompts"
+import { select, log, cancel, isCancel, text } from "@clack/prompts"
 import { readFileSync, readdirSync } from "fs"
 import { join } from "path"
 import { z } from "zod"
+
+export type DayStanding = {
+  date: Date
+  company: string
+  /** TODO: Add docs about how M stands for in millions */
+  marketCapM: number
+  sharePrice: number
+}
 
 /**
  * Reads and parses a CSV file containing market capitalisation data
@@ -80,10 +88,7 @@ export async function readData() {
     })
 
     // Group the data by date, and parse them into objects
-    const groupedByDate = new Map<
-      string,
-      { date: string; company: string; marketCapM: number; price: number }[]
-    >()
+    const groupedByDate = new Map<string, DayStanding[]>()
 
     for (const row of dataRows) {
       const values = row.split(",")
@@ -107,7 +112,13 @@ export async function readData() {
 
       // Create entry for date if it doesn't exist
       if (!groupedByDate.has(date)) groupedByDate.set(date, [])
-      groupedByDate.get(date)!.push(parsed.data)
+
+      const { date: dateStr, price: sharePrice, ...rest } = parsed.data
+      groupedByDate.get(date)!.push({
+        ...rest,
+        date: new Date(dateStr),
+        sharePrice,
+      })
     }
 
     // Sort the entries by date
@@ -120,9 +131,46 @@ export async function readData() {
     )
 
     log.step(`File ${selectedFile} read successfully`)
-    return { lines, headers, dataRows, entriesSortedByDate }
+    return { entriesSortedByDate }
   } catch (err) {
     cancel(`Error reading file ${selectedFile}: ${err}`)
     process.exit(1)
   }
+}
+
+// The user should enter a positive, finite number in millions for the
+// allocation amount
+const allocationAmountSchema = z
+  .string()
+  .regex(/^\d+(\.\d+)?$/, "Must be a valid positive number")
+  .transform((val) => parseFloat(val))
+  .pipe(z.number().positive().finite())
+
+/** TODO: Add documentation */
+export async function getInitialAllocationAmount() {
+  // Choose initial allocation amount
+  const allocationAmountInput = await text({
+    message: "Enter the initial allocation amount (in millions):",
+    placeholder: "100",
+    initialValue: "100",
+  })
+
+  if (isCancel(allocationAmountInput)) {
+    cancel("No allocation amount entered. Exiting.")
+    process.exit(0)
+  }
+
+  // Validate and parse the allocation amount
+  const validationResult = allocationAmountSchema.safeParse(
+    allocationAmountInput
+  )
+
+  if (!validationResult.success) {
+    cancel(
+      `Invalid allocation amount: ${validationResult.error.errors[0].message}`
+    )
+    process.exit(1)
+  }
+
+  return validationResult.data
 }

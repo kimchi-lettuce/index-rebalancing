@@ -155,4 +155,9 @@ export function executeOrdersOnPortfolioState(
       ) / 1_000_000
     ).toFixed(DECIMAL_PRECISION)
   )
+
+  // Filter out any assets that have 0 shares
+  portfolioState.assets = portfolioState.assets.filter(
+    (asset) => asset.numShares > 0
+  )
 }

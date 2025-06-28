@@ -15,8 +15,11 @@ import {
 } from "./utils/orders"
 import { generateMarkdownReport } from "./utils/reporting"
 
-/** TODO: Add explanation of why this is 8 */
+/** Because we are dealing in the millions, we want to round to the nearest
+ * cent. We then use this precision for all floating point calculations */
 export const DECIMAL_PRECISION = 8
+/** Controls the percentile of companies to select from the universe of
+ * companies to make up the market cap weighted portfolio */
 export const PERCENTILE_OF_COMPANIES_TO_SELECT = 0.85
 
 async function main() {
@@ -32,8 +35,15 @@ async function main() {
     totalValueM: 0,
   }
 
-  // TODO: Rename entriesSortedbyDate
+  // TODO: Rename entriesSortedbyDate to a better variable name
+
+  // Loop through each date, calculating the new allocations, and generating the
+  // orders to rebalance the portfolio
   for (const [date, entries] of entriesSortedByDate) {
+    /** Create a copy of the portfolio state, so we can use it to track the
+     * previous portfolio state */
+    const prevPortfolioState = JSON.parse(JSON.stringify(portfolioState))
+
     // Note, selecting the companies for the new rebalancing, does not require
     // evaluation of the current value of the portfolio
     const selectedCompanies = selectCompaniesByMarketCapWeight(
@@ -64,13 +74,12 @@ async function main() {
     // Generate a markdown report
     generateMarkdownReport(
       new Date(date),
+      prevPortfolioState,
       portfolioState,
       selectedCompanies,
       companiesWithAllocations,
       orders
     )
-
-    process.exit(1)
   }
 }
 

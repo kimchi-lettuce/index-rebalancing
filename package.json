@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "src/main.ts",
   "scripts": {
-    "start": "npx tsx src/main.ts"
+    "start": "tsx src/main.ts"
   },
   "author": "",
   "license": "ISC",
@@ -13,6 +13,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@types/node": "^24.0.4"
+    "@types/node": "^24.0.4",
+    "tsx": "^4.20.3"
   }
 }

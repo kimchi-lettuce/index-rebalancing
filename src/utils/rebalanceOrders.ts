@@ -7,6 +7,8 @@ type Order = {
   company: string
   /** Number of shares to buy or sell */
   numShares: number
+  /** The price of the shares */
+  sharePrice: number | undefined
   /** Whether this is a buy or sell order */
   action: "buy" | "sell"
 }
@@ -43,6 +45,7 @@ export function getRebalanceOrders(
       orders.push({
         company: holding.company,
         numShares: holding.numShares,
+        sharePrice: undefined,
         action: "sell",
       })
     } else {
@@ -67,6 +70,7 @@ export function getRebalanceOrders(
         // Round down to the nearest whole number of shares. TODO: Need to think
         // more about this. Is rounding down always the correct thing to do?
         numShares: Math.floor(Math.abs(difference) / sharePrice),
+        sharePrice,
         action: difference > 0 ? "buy" : "sell",
       })
     }
@@ -82,7 +86,8 @@ export function getRebalanceOrders(
     if (!isInCurrentHoldings) {
       orders.push({
         company,
-        numShares: Math.floor(allocationAmountM / sharePrice),
+        numShares: Math.floor((allocationAmountM * 1_000_000) / sharePrice),
+        sharePrice,
         action: "buy",
       })
     }

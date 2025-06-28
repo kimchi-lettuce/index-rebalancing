@@ -25,6 +25,23 @@ export function generateMarkdownReport(
 ) {
   const dateStr = date.toISOString().split("T")[0]
 
+  // Sort arrays by company name for consistent table ordering
+  const sortedSelectedCompanies = [...selectedCompanies].sort((a, b) =>
+    a.company.localeCompare(b.company)
+  )
+  const sortedCompaniesWithAllocations = [...companiesWithAllocations].sort(
+    (a, b) => a.company.localeCompare(b.company)
+  )
+  const sortedPrevAssets = [...prevPortfolioState.assets].sort((a, b) =>
+    a.company.localeCompare(b.company)
+  )
+  const sortedRebalanceOrders = [...rebalanceOrders].sort((a, b) =>
+    a.company.localeCompare(b.company)
+  )
+  const sortedPortfolioAssets = [...portfolioState.assets].sort((a, b) =>
+    a.company.localeCompare(b.company)
+  )
+
   const report = `# Portfolio Rebalancing Report - ${dateStr}
 
 ## Portfolio Summary
@@ -42,7 +59,7 @@ Companies selected for inclusion in the index fund based on market capitalizatio
 
 | Company | Share Price | Market Cap (M) | Weight | Cumulative Weight |
 |---------|-------------|----------------|--------|-------------------|
-${selectedCompanies
+${sortedSelectedCompanies
   .map(
     (company) =>
       `| ${company.company} | $${company.sharePrice.toFixed(
@@ -58,7 +75,7 @@ Target dollar amounts and percentage allocations for each company in the index f
 
 | Company | Target Allocation (M) | Target Allocation (%) |
 |---------|----------------------|----------------------|
-${companiesWithAllocations
+${sortedCompaniesWithAllocations
   .map((company) => {
     const percentage =
       (company.allocationAmountM / portfolioState.totalValueM) * 100
@@ -74,7 +91,7 @@ Portfolio state before executing rebalancing orders.
 
 | Company | Shares | Current Value (M) |
 |---------|--------|-------------------|
-${prevPortfolioState.assets
+${sortedPrevAssets
   .map((asset) => {
     const currentValue = (asset.numShares * asset.sharePrice) / 1_000_000
     return `| ${
@@ -86,7 +103,7 @@ ${prevPortfolioState.assets
 ## Rebalancing Orders
 | Company | Action | Shares | Share Price | Order Value (M) |
 |---------|--------|--------|-------------|-----------------|
-${rebalanceOrders
+${sortedRebalanceOrders
   .map((order) => {
     const orderValue = (order.numShares * (order.sharePrice || 0)) / 1_000_000
     return `| ${
@@ -102,7 +119,7 @@ Portfolio state after executing rebalancing orders.
 
 | Company | Shares | Current Value (M) |
 |---------|--------|-------------------|
-${portfolioState.assets
+${sortedPortfolioAssets
   .map((asset) => {
     const currentValue = (asset.numShares * asset.sharePrice) / 1_000_000
     return `| ${

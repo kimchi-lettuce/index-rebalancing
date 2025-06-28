@@ -68,9 +68,14 @@ export function getRebalanceOrders(
       // value
       orders.push({
         company: holding.company,
-        // Round down to the nearest whole number of shares. TODO: Need to think
-        // more about this. Is rounding down always the correct thing to do?
-        numShares: Math.floor(Math.abs(difference) / sharePrice),
+        // When buying shares, we want to round down, and for selling shares, we
+        // want to round up. This ensures that there is always enough money
+        // within the fund to rebalance, and that the fund manager is never
+        // forced to inject more money into the fund due to rounding errors.
+        numShares:
+          difference > 0
+            ? Math.floor(Math.abs(difference) / sharePrice) // buy
+            : Math.ceil(Math.abs(difference) / sharePrice), // sell
         sharePrice,
         action: difference > 0 ? "buy" : "sell",
       })

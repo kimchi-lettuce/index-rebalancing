@@ -3,11 +3,15 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "fs"
 import { join } from "path"
 import { z } from "zod"
 
+/** Represents a single day's market data for a company */
 export type DayStanding = {
+  /** The date of the market data entry */
   date: Date
+  /** The company name */
   company: string
-  /** TODO: Add docs about how M stands for in millions */
+  /** Market capitalization in millions (M) of dollars */
   marketCapM: number
+  /** The share price in dollars */
   sharePrice: number
 }
 
@@ -157,7 +161,15 @@ const allocationAmountSchema = z
   .transform((val) => parseFloat(val))
   .pipe(z.number().positive().finite())
 
-/** TODO: Add documentation */
+/**
+ * Prompts the user to enter an initial allocation amount for portfolio investment
+ *
+ * Prompts the user to input a monetary amount in millions of dollars that will
+ * be used as the initial investment amount for portfolio allocation calculations.
+ * Validates that the input is a positive, finite number.
+ *
+ * @returns The validated allocation amount in millions of dollars
+ */
 export async function getInitialAllocationAmount() {
   // Choose initial allocation amount
   const allocationAmountInput = await text({

@@ -35,6 +35,10 @@ async function main() {
     totalValueM: 0,
   }
 
+  // FIXME: The dates on the files aren't showing correctly. 
+  // FIXME: Add one unit test
+  // FIXME: Add explanation in README.md
+
   // TODO: Rename entriesSortedbyDate to a better variable name
 
   // Loop through each date, calculating the new allocations, and generating the
@@ -44,8 +48,9 @@ async function main() {
      * previous portfolio state */
     const prevPortfolioState = JSON.parse(JSON.stringify(portfolioState))
 
-    // Note, selecting the companies for the new rebalancing, does not require
-    // evaluation of the current value of the portfolio
+    // Note, selecting the companies for the new rebalancing, can be done with
+    // only the entries for the date, and has no need to know the current
+    // portfolio state
     const selectedCompanies = selectCompaniesByMarketCapWeight(
       entries,
       PERCENTILE_OF_COMPANIES_TO_SELECT
@@ -71,7 +76,7 @@ async function main() {
     // Execute the orders
     executeOrdersOnPortfolioState(orders, portfolioState)
 
-    // Generate a markdown report
+    // Generate a markdown report for each date
     generateMarkdownReport(
       new Date(date),
       prevPortfolioState,

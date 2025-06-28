@@ -1,14 +1,15 @@
+import { DECIMAL_PRECISION } from "../main"
 import { type PortfolioState } from "./portfolioValue"
 import { type WeightedCompany } from "./selectCompanies"
 
 /** Represents a buy or sell order for a specific company */
-type Order = {
+export type Order = {
   /** The company name for this order */
   company: string
   /** Number of shares to buy or sell */
   numShares: number
   /** The price of the shares */
-  sharePrice: number | undefined
+  sharePrice: number
   /** Whether this is a buy or sell order */
   action: "buy" | "sell"
 }
@@ -45,7 +46,7 @@ export function getRebalanceOrders(
       orders.push({
         company: holding.company,
         numShares: holding.numShares,
-        sharePrice: undefined,
+        sharePrice: holding.sharePrice,
         action: "sell",
       })
     } else {
@@ -84,9 +85,10 @@ export function getRebalanceOrders(
     )
 
     if (!isInCurrentHoldings) {
+      const numShares = Math.floor((allocationAmountM * 1_000_000) / sharePrice)
       orders.push({
         company,
-        numShares: Math.floor((allocationAmountM * 1_000_000) / sharePrice),
+        numShares,
         sharePrice,
         action: "buy",
       })
@@ -94,4 +96,63 @@ export function getRebalanceOrders(
   }
 
   return orders
+}
+
+/**
+ * Executes a list of orders by updating the portfolio state
+ *
+ * Processes buy and sell orders by modifying the share counts and share prices
+ * of assets in the portfolio. For buy orders, increases the number of shares
+ * held. For sell orders, decreases the number of shares held. Updates the share
+ * price to reflect the current market price at the time of the order.
+ *
+ * @param orders - Array of buy/sell orders to execute
+ * @param portfolioState - Current portfolio state to be updated
+ */
+export function executeOrdersOnPortfolioState(
+  orders: Order[],
+  portfolioState: PortfolioState
+) {
+  // TODO: You can add functionality here to actually execute the orders by
+  // calling some API to buy and sell the shares through this script
+
+  for (const order of orders) {
+    const asset = portfolioState.assets.find(
+      (asset) => asset.company === order.company
+    )
+    if (!asset) {
+      // If the asset is not found in the portfolio, it means that it is a new
+      // asset. We need to add it to the portfolio.
+      if (order.action === "buy") {
+        portfolioState.assets.push({
+          company: order.company,
+          numShares: order.numShares,
+          sharePrice: order.sharePrice,
+        })
+      } else {
+        throw new Error(
+          `Asset ${order.company} not found in portfolio. Unable to sell shares.`
+        )
+      }
+    } else {
+      // Otherwise, if the asset is found in the portfolio, we need to update
+      // the number of shares and the share price.
+      if (order.action === "buy") {
+        asset.numShares += order.numShares
+      } else {
+        asset.numShares -= order.numShares
+      }
+      asset.sharePrice = order.sharePrice
+    }
+  }
+
+  // Update the total value of the portfolio to reflect the new assets
+  portfolioState.totalValueM = Number(
+    (
+      portfolioState.assets.reduce(
+        (acc, asset) => acc + asset.numShares * asset.sharePrice,
+        0
+      ) / 1_000_000
+    ).toFixed(DECIMAL_PRECISION)
+  )
 }

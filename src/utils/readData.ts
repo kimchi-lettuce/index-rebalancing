@@ -1,5 +1,5 @@
-import { select, log, cancel, isCancel, text } from "@clack/prompts"
-import { readFileSync, readdirSync } from "fs"
+import { select, log, cancel, isCancel, text, confirm } from "@clack/prompts"
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "fs"
 import { join } from "path"
 import { z } from "zod"
 
@@ -21,6 +21,17 @@ export type DayStanding = {
  * dataRows
  */
 export async function readData() {
+  // Ensure the data directory exists
+  if (!existsSync("./data")) {
+    try {
+      mkdirSync("./data", { recursive: true })
+      log.success("Created ./data directory")
+    } catch (error) {
+      cancel(`Failed to create ./data directory: ${error}`)
+      process.exit(1)
+    }
+  }
+
   // Read all files in the data directory
   const files = readdirSync("./data")
   const csvFiles = files.filter((file) => file.toLowerCase().endsWith(".csv"))
@@ -173,4 +184,35 @@ export async function getInitialAllocationAmount() {
   }
 
   return validationResult.data
+}
+
+/**
+ * Resets the output folder by prompting the user to delete it
+ *
+ * Prompts the user to confirm deletion of the ./output folder before generating
+ * new reports. If confirmed, removes the folder and its contents.
+ */
+export async function resetOutputFolder() {
+  log.info("The ./output folder will be deleted before generating new reports")
+
+  // Confirm deletion of output folder
+  const shouldDeleteOutput = await confirm({
+    message: "Delete the ./output folder before generating new reports?",
+    initialValue: true,
+  })
+
+  if (isCancel(shouldDeleteOutput) || !shouldDeleteOutput) {
+    cancel("Operation cancelled by user.")
+    process.exit(0)
+  }
+
+  try {
+    if (existsSync("./output")) {
+      rmSync("./output", { recursive: true, force: true })
+      log.success("Deleted ./output folder")
+    }
+  } catch (error) {
+    log.error(`Failed to delete ./output folder: ${error}`)
+    process.exit(1)
+  }
 }

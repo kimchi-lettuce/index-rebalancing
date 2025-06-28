@@ -12,12 +12,12 @@ import { type WeightedCompany } from "./selectCompanies"
  * proportional allocation.
  *
  * @param selectedCompanies - Array of companies with their market cap weights
- * @param totalValue - Total portfolio value to be allocated across companies
+ * @param totalValueM - Total portfolio value to be allocated across companies
  * @returns Array of companies with their computed allocation amounts
  */
 export function computeCompanyAllocationAmounts(
   selectedCompanies: WeightedCompany[],
-  totalValue: number
+  totalValueM: number
 ): (WeightedCompany & { allocationAmountM: number })[] {
   /** The total weight of all selected companies. This is used to normalize the
    * weights of the companies to ensure that the total weight is 1.0 */
@@ -31,7 +31,7 @@ export function computeCompanyAllocationAmounts(
   const allocationAmounts = selectedCompanies.map((companyData) => ({
     ...companyData,
     allocationAmountM: Number(
-      ((companyData.weight / totalSelectedWeight) * totalValue).toFixed(
+      ((companyData.weight / totalSelectedWeight) * totalValueM).toFixed(
         DECIMAL_PRECISION
       )
     )

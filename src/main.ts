@@ -2,27 +2,34 @@ import {
   type PortfolioState,
   computeNewPortfolioState,
 } from "./utils/portfolioValue"
-import { readData, getInitialAllocationAmount } from "./utils/readData"
+import {
+  readData,
+  getInitialAllocationAmount,
+  resetOutputFolder,
+} from "./utils/readData"
 import { selectCompaniesByMarketCapWeight } from "./utils/selectCompanies"
 import { computeCompanyAllocationAmounts } from "./utils/companyAllocations"
-import { getRebalanceOrders } from "./utils/rebalanceOrders"
+import {
+  executeOrdersOnPortfolioState,
+  getRebalanceOrders,
+} from "./utils/orders"
+import { generateMarkdownReport } from "./utils/reporting"
 
 /** TODO: Add explanation of why this is 8 */
 export const DECIMAL_PRECISION = 8
-const PERCENTILE_OF_COMPANIES_TO_SELECT = 0.85
-
-// TODO: Add the creation of the ./data folder
+export const PERCENTILE_OF_COMPANIES_TO_SELECT = 0.85
 
 async function main() {
+  await resetOutputFolder()
   const { entriesSortedByDate } = await readData()
-  const initialAllocationAmount = await getInitialAllocationAmount()
+  const initialAllocationAmountM = await getInitialAllocationAmount()
 
   let portfolioState: PortfolioState = {
     date: new Date(),
     assets: [],
-    initialAllocationAmount,
+    initialAllocationAmountM,
     // Initialise to 0 as the initial allocation is not used yet
-    totalValue: 0,
+    totalValueM: 0,
   }
 
   // TODO: Rename entriesSortedbyDate
@@ -40,15 +47,28 @@ async function main() {
     portfolioState = computeNewPortfolioState(portfolioState, entries)
     const companiesWithAllocations = computeCompanyAllocationAmounts(
       selectedCompanies,
-      portfolioState.totalValue
+      portfolioState.totalValueM
     )
 
-    const rebalanceOrders = getRebalanceOrders(
+    // Based on the current holdings, and the calculations for the new
+    // allocations of holdings, generate the list of orders to rebalance the
+    // portfolio
+    const orders = getRebalanceOrders(
       portfolioState.assets,
       companiesWithAllocations
     )
 
-    console.log(rebalanceOrders)
+    // Execute the orders
+    executeOrdersOnPortfolioState(orders, portfolioState)
+
+    // Generate a markdown report
+    generateMarkdownReport(
+      new Date(date),
+      portfolioState,
+      selectedCompanies,
+      companiesWithAllocations,
+      orders
+    )
 
     process.exit(1)
   }

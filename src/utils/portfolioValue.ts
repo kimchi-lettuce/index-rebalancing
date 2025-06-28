@@ -5,7 +5,7 @@ import { type DayStanding } from "./readData"
  * value */
 export type PortfolioState = {
   /** The date this portfolio state represents */
-  date: Date
+  date: Date | null
   /** Array of assets held in the portfolio with company name and number of
    * shares */
   assets: { company: string; numShares: number; sharePrice: number }[]
@@ -23,11 +23,13 @@ export type PortfolioState = {
  * subsequent states, calculates the total value by multiplying each asset's
  * shares by current market prices.
  *
+ * @param date - The date for the new portfolio state
  * @param portfolioState - Current portfolio state
  * @param entriesForDay - Market data for the current day including prices
  * @returns Updated portfolio state with new total value
  */
 export function computeNewPortfolioState(
+  date: Date,
   portfolioState: PortfolioState,
   entriesForDay: DayStanding[]
 ): PortfolioState {
@@ -38,6 +40,7 @@ export function computeNewPortfolioState(
   if (!assets.length && initialAllocationAmountM) {
     return {
       ...portfolioState,
+      date,
       initialAllocationAmountM: null,
       totalValueM: initialAllocationAmountM,
     }
@@ -53,6 +56,7 @@ export function computeNewPortfolioState(
 
   return {
     ...portfolioState,
+    date,
     totalValueM: Number(
       (newTotalValueM / 1_000_000).toFixed(DECIMAL_PRECISION)
     ),

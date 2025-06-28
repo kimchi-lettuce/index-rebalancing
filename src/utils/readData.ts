@@ -2,6 +2,7 @@ import { select, log, cancel, isCancel, text, confirm } from "@clack/prompts"
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "fs"
 import { join } from "path"
 import { z } from "zod"
+import { parseDateDDMMYYYY } from "./helpers"
 
 /** Represents a single day's market data for a company */
 export type DayStanding = {
@@ -131,7 +132,7 @@ export async function readData() {
       const { date: dateStr, price: sharePrice, ...rest } = parsed.data
       groupedByDate.get(date)!.push({
         ...rest,
-        date: new Date(dateStr),
+        date: parseDateDDMMYYYY(dateStr),
         sharePrice,
       })
     }
@@ -139,8 +140,8 @@ export async function readData() {
     // Sort the entries by date
     const entriesSortedByDate = Array.from(groupedByDate.entries()).sort(
       ([dateStrA], [dateStrB]) => {
-        const dateA = new Date(dateStrA)
-        const dateB = new Date(dateStrB)
+        const dateA = parseDateDDMMYYYY(dateStrA)
+        const dateB = parseDateDDMMYYYY(dateStrB)
         return dateA.getTime() - dateB.getTime()
       }
     )

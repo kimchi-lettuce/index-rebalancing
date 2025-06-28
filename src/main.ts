@@ -1,19 +1,20 @@
+import { computeCompanyAllocationAmounts } from "./utils/companyAllocations"
+import { parseDateDDMMYYYY } from "./utils/helpers"
+import {
+  executeOrdersOnPortfolioState,
+  getRebalanceOrders,
+} from "./utils/orders"
 import {
   type PortfolioState,
   computeNewPortfolioState,
 } from "./utils/portfolioValue"
 import {
-  readData,
   getInitialAllocationAmount,
+  readData,
   resetOutputFolder,
 } from "./utils/readData"
-import { selectCompaniesByMarketCapWeight } from "./utils/selectCompanies"
-import { computeCompanyAllocationAmounts } from "./utils/companyAllocations"
-import {
-  executeOrdersOnPortfolioState,
-  getRebalanceOrders,
-} from "./utils/orders"
 import { generateMarkdownReport } from "./utils/reporting"
+import { selectCompaniesByMarketCapWeight } from "./utils/selectCompanies"
 
 /** Because we are dealing in the millions, we want to round to the nearest
  * cent. We then use this precision for all floating point calculations */
@@ -28,14 +29,13 @@ async function main() {
   const initialAllocationAmountM = await getInitialAllocationAmount()
 
   let portfolioState: PortfolioState = {
-    date: new Date(),
+    date: null,
     assets: [],
     initialAllocationAmountM,
     // Initialise to 0 as the initial allocation is not used yet
     totalValueM: 0,
   }
 
-  // FIXME: The dates on the files aren't showing correctly. 
   // FIXME: Add one unit test
   // FIXME: Add explanation in README.md
 
@@ -43,7 +43,8 @@ async function main() {
 
   // Loop through each date, calculating the new allocations, and generating the
   // orders to rebalance the portfolio
-  for (const [date, entries] of entriesSortedByDate) {
+  for (const [dateStr, entries] of entriesSortedByDate) {
+    const date = parseDateDDMMYYYY(dateStr)
     /** Create a copy of the portfolio state, so we can use it to track the
      * previous portfolio state */
     const prevPortfolioState = JSON.parse(JSON.stringify(portfolioState))
@@ -59,7 +60,7 @@ async function main() {
     // Update the portfolio state with the new total value based on the date's
     // new share prices, and recalculate based on the selected companies weights
     // and the total portfolio value, what the new allocation amounts should be
-    portfolioState = computeNewPortfolioState(portfolioState, entries)
+    portfolioState = computeNewPortfolioState(date, portfolioState, entries)
     const companiesWithAllocations = computeCompanyAllocationAmounts(
       selectedCompanies,
       portfolioState.totalValueM
@@ -78,7 +79,7 @@ async function main() {
 
     // Generate a markdown report for each date
     generateMarkdownReport(
-      new Date(date),
+      date,
       prevPortfolioState,
       portfolioState,
       selectedCompanies,

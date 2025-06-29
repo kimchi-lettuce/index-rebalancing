@@ -123,6 +123,12 @@ export async function readData() {
             price,
           })}\n${parsed.error}`
         )
+
+        if (!price) {
+          cancel(
+            `The data is missing a 'price' column/field. Please check the data file and ensure that the price field is present for all rows. Knowing the share price is important for the index rebalance tool to work correctly.`
+          )
+        }
         process.exit(1)
       }
 

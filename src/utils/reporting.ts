@@ -125,8 +125,19 @@ ${sortedRebalanceOrders
 
 - **Total Buy Rebalancing Value**: $${totalBuyValue.toFixed(2)}
 - **Total Sell Rebalancing Value**: $${totalSellValue.toFixed(2)}
-- **Rebalancing Net Cash Flow (Total Sell - Total Buy)**: $${rebalancingNetFlow.toFixed(2)}
-  - This represents the cash remaining after all rebalancing trades are executed. It is typically positive due to rounding down when buying shares, and remains as liquid cash in the portfolio.
+${
+  // We want to conditionally render this information, because upon first using
+  // the initialAllocaiton, there would be no sell orders, but only buy orders
+  // to get the portfolio to the initial allocation. It's confusing to show the
+  // net cash flow, as in all other cases, we expect the net cash flow to be
+  // close to zero.
+  totalSellValue > 0
+    ? `- **Rebalancing Net Cash Flow (Total Sell - Total Buy)**: $${rebalancingNetFlow.toFixed(
+        2
+      )}
+  - This represents the cash remaining after all rebalancing trades are executed. It is typically positive due to rounding down when buying shares, and remains as liquid cash in the portfolio.`
+    : ""
+}
 
 ## Holdings After Rebalancing
 Portfolio state after executing rebalancing orders.

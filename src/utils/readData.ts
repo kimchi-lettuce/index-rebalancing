@@ -147,7 +147,7 @@ export async function readData() {
     )
 
     log.step(`File ${selectedFile} read successfully`)
-    return { entriesSortedByDate }
+    return { companyValuationsByDate: entriesSortedByDate }
   } catch (err) {
     cancel(`Error reading file ${selectedFile}: ${err}`)
     process.exit(1)

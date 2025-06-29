@@ -23,7 +23,16 @@ export function generateMarkdownReport(
   companiesWithAllocations: (WeightedCompany & { allocationAmountM: number })[],
   rebalanceOrders: Order[]
 ) {
-  const dateStr = date.toISOString().split("T")[0]
+  const dateStr = date.toLocaleDateString("en-AU").replaceAll("/", "-")
+
+  // Calculate total buy and sell values
+  const totalBuyValue = rebalanceOrders
+    .filter((o) => o.action === "buy")
+    .reduce((sum, o) => sum + o.numShares * (o.sharePrice || 0), 0)
+  const totalSellValue = rebalanceOrders
+    .filter((o) => o.action === "sell")
+    .reduce((sum, o) => sum + o.numShares * (o.sharePrice || 0), 0)
+  const rebalancingNetFlow = totalSellValue - totalBuyValue
 
   // Sort arrays by company name for consistent table ordering
   const sortedSelectedCompanies = [...selectedCompanies].sort((a, b) =>
@@ -114,6 +123,11 @@ ${sortedRebalanceOrders
   })
   .join("\n")}
 
+- **Total Buy Rebalancing Value**: $${totalBuyValue.toFixed(2)}
+- **Total Sell Rebalancing Value**: $${totalSellValue.toFixed(2)}
+- **Rebalancing Net Cash Flow (Total Sell - Total Buy)**: $${rebalancingNetFlow.toFixed(2)}
+  - This represents the cash remaining after all rebalancing trades are executed. It is typically positive due to rounding down when buying shares, and remains as liquid cash in the portfolio.
+
 ## Holdings After Rebalancing
 Portfolio state after executing rebalancing orders.
 
@@ -135,18 +149,9 @@ ${sortedPortfolioAssets
 - **Total Sell Orders**: ${
     rebalanceOrders.filter((o) => o.action === "sell").length
   }
-- **Total Buy Value**: $${(
-    rebalanceOrders
-      .filter((o) => o.action === "buy")
-      .reduce((sum, o) => sum + o.numShares * (o.sharePrice || 0), 0) /
-    1_000_000
-  ).toFixed(2)}M
-- **Total Sell Value**: $${(
-    rebalanceOrders
-      .filter((o) => o.action === "sell")
-      .reduce((sum, o) => sum + o.numShares * (o.sharePrice || 0), 0) /
-    1_000_000
-  ).toFixed(2)}M
+- **Total Buy Value**: $${totalBuyValue.toFixed(2)}
+- **Total Sell Value**: $${totalSellValue.toFixed(2)}
+- **Rebalancing Net Cash Flow**: $${rebalancingNetFlow.toFixed(2)}
 `
 
   // Ensure output directory exists

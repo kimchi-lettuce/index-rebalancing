@@ -25,7 +25,7 @@ export const PERCENTILE_OF_COMPANIES_TO_SELECT = 0.85
 
 async function main() {
   await resetOutputFolder()
-  const { entriesSortedByDate } = await readData()
+  const { companyValuationsByDate } = await readData()
   const initialAllocationAmountM = await getInitialAllocationAmount()
 
   let portfolioState: PortfolioState = {
@@ -39,11 +39,9 @@ async function main() {
   // FIXME: Add one unit test
   // FIXME: Add explanation in README.md
 
-  // TODO: Rename entriesSortedbyDate to a better variable name
-
   // Loop through each date, calculating the new allocations, and generating the
   // orders to rebalance the portfolio
-  for (const [dateStr, entries] of entriesSortedByDate) {
+  for (const [dateStr, companyValuationsForDay] of companyValuationsByDate) {
     const date = parseDateDDMMYYYY(dateStr)
     /** Create a copy of the portfolio state, so we can use it to track the
      * previous portfolio state */
@@ -53,14 +51,14 @@ async function main() {
     // only the entries for the date, and has no need to know the current
     // portfolio state
     const selectedCompanies = selectCompaniesByMarketCapWeight(
-      entries,
+      companyValuationsForDay,
       PERCENTILE_OF_COMPANIES_TO_SELECT
     )
 
     // Update the portfolio state with the new total value based on the date's
     // new share prices, and recalculate based on the selected companies weights
     // and the total portfolio value, what the new allocation amounts should be
-    portfolioState = computeNewPortfolioState(date, portfolioState, entries)
+    portfolioState = computeNewPortfolioState(date, portfolioState, companyValuationsForDay)
     const companiesWithAllocations = computeCompanyAllocationAmounts(
       selectedCompanies,
       portfolioState.totalValueM
@@ -70,6 +68,7 @@ async function main() {
     // allocations of holdings, generate the list of orders to rebalance the
     // portfolio
     const orders = getRebalanceOrders(
+      companyValuationsForDay,
       portfolioState.assets,
       companiesWithAllocations
     )

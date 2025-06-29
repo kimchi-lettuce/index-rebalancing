@@ -1,6 +1,7 @@
 import { DECIMAL_PRECISION } from "../main"
 import { type PortfolioState } from "./portfolioValue"
 import { type WeightedCompany } from "./selectCompanies"
+import { type DayStanding } from "./readData"
 
 /** Represents a buy or sell order for a specific company */
 export type Order = {
@@ -30,10 +31,16 @@ export type Order = {
  * @returns Array of orders to execute for rebalancing
  */
 export function getRebalanceOrders(
+  dayEntries: DayStanding[],
   currentHoldings: PortfolioState["assets"],
   newAllocations: (WeightedCompany & { allocationAmountM: number })[]
 ): Order[] {
   const orders: Order[] = []
+
+  function getSharePrice(company: string) {
+    const dayEntry = dayEntries.find((dayEntry) => dayEntry.company === company)
+    return dayEntry?.sharePrice || 0
+  }
 
   for (const holding of currentHoldings) {
     const isInNewAllocations = newAllocations.some(
@@ -46,7 +53,7 @@ export function getRebalanceOrders(
       orders.push({
         company: holding.company,
         numShares: holding.numShares,
-        sharePrice: holding.sharePrice,
+        sharePrice: getSharePrice(holding.company),
         action: "sell",
       })
     } else {
@@ -82,8 +89,8 @@ export function getRebalanceOrders(
     }
   }
 
-  // Finally find the rest that are in newAllocations but not in currentHoldings
-  // These need to be bought
+  // Finally find the rest that are in newAllocations but not in
+  // currentHoldings. These need to be bought.
   for (const { company, allocationAmountM, sharePrice } of newAllocations) {
     const isInCurrentHoldings = currentHoldings.some(
       (holding) => holding.company === company

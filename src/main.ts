@@ -36,8 +36,6 @@ async function main() {
     totalValueM: 0,
   }
 
-  // FIXME: Add explanation in README.md
-
   // Loop through each date, calculating the new allocations, and generating the
   // orders to rebalance the portfolio
   for (const [dateStr, companyValuationsForDay] of companyValuationsByDate) {

@@ -140,3 +140,11 @@ const robustRowSchema = z.object({
 });
 ```
 This enhanced schema, combined with unit tests for various valid and invalid data formats, would make the data ingestion process much more resilient and prevent bad data from propagating into the financial calculations.
+
+## 🧪 Testing Philosophy & Test Organization
+
+All unit tests for this project are located in the `src/utils/__tests__` directory. Currently, there is one test file: `selectCompanies.test.ts`, which verifies the logic for selecting companies by market cap weight. This test ensures that the selection and weighting logic works as intended for a variety of scenarios.
+
+The codebase is intentionally designed with modular, isolated functions for each core piece of logic (such as data reading, company selection, order generation, and reporting). This modularity makes it straightforward to add targeted unit tests for each function. For example, you could add tests for the `readData` function to verify that it correctly parses and validates different CSV file formats, or for the order generation logic to ensure it handles edge cases in rounding and allocation.
+
+This approach not only improves maintainability but also ensures that each part of the system can be independently verified for correctness. As the project evolves, additional test files can be added to `src/utils/__tests__` to cover new features or edge cases, further strengthening the reliability of the codebase.

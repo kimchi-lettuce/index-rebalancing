@@ -1,12 +1,20 @@
 import { DECIMAL_PRECISION } from "../main"
 import { type DayStanding } from "./readData"
 
+/** Represents a company with its market data and calculated weights for
+ * portfolio allocation */
 export type WeightedCompany = {
+  /** The date of the market data entry */
   date: Date
+  /** The company name */
   company: string
+  /** The share price in dollars */
   sharePrice: number
+  /** Market capitalization in millions (M) of dollars */
   marketCapM: number
+  /** The weight of this company within the selected universe (0-1) */
   weight: number
+  /** The cumulative weight up to this company in the sorted list */
   cumulative: number
 }
 
@@ -25,8 +33,9 @@ export function selectCompaniesByMarketCapWeight(
     0
   )
 
-  // Gather market cap and weight for each company. FIXME: Because of rounding,
-  // the sum of the weights may not be 1.0
+  // Gather market cap and weight for each company. Note, because of rounding,
+  // the sum of the weights will not be exactly 1.0. TODO: Investigate rounding
+  // considerations further
   const sortedMarketCapAndWeight = entriesForDay
     .map((entry) => ({
       ...entry,

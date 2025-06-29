@@ -36,7 +36,6 @@ async function main() {
     totalValueM: 0,
   }
 
-  // FIXME: Add one unit test
   // FIXME: Add explanation in README.md
 
   // Loop through each date, calculating the new allocations, and generating the
@@ -58,7 +57,11 @@ async function main() {
     // Update the portfolio state with the new total value based on the date's
     // new share prices, and recalculate based on the selected companies weights
     // and the total portfolio value, what the new allocation amounts should be
-    portfolioState = computeNewPortfolioState(date, portfolioState, companyValuationsForDay)
+    portfolioState = computeNewPortfolioState(
+      date,
+      portfolioState,
+      companyValuationsForDay
+    )
     const companiesWithAllocations = computeCompanyAllocationAmounts(
       selectedCompanies,
       portfolioState.totalValueM
@@ -88,4 +91,6 @@ async function main() {
   }
 }
 
-main()
+if (require.main === module) {
+  main()
+}
